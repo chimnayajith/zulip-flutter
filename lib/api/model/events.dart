@@ -30,6 +30,12 @@ sealed class Event {
           default: return UnexpectedEvent.fromJson(json);
         }
       case 'custom_profile_fields': return CustomProfileFieldsEvent.fromJson(json);
+      case 'realm':
+        switch (json['op'] as String) {
+          case 'update': return RealmUpdateEvent.fromJson(json);
+          case 'update_dict': return RealmUpdateDictEvent.fromJson(json);
+          default: return UnexpectedEvent.fromJson(json);
+        }
       case 'realm_user':
         switch (json['op'] as String) {
           case 'add': return RealmUserAddEvent.fromJson(json);
@@ -195,6 +201,76 @@ class CustomProfileFieldsEvent extends Event {
 
   @override
   Map<String, dynamic> toJson() => _$CustomProfileFieldsEventToJson(this);
+}
+/// A Zulip event of type `realm`.
+///
+/// The corresponding API docs are in several places for
+/// different values of `op`; see subclasses.
+sealed class RealmEvent extends Event {
+  @override
+  @JsonKey(includeToJson: true)
+  String get type => 'realm';
+
+  String get op;
+
+  RealmEvent({required super.id});
+}
+
+/// A [RealmEvent] with op `update`: Represents an update to a specific property in the realm configuration.
+/// See: https://zulip.com/api/get-events#realm-update
+@JsonSerializable(fieldRename: FieldRename.snake)
+class RealmUpdateEvent extends RealmEvent {
+  @override
+  @JsonKey(includeToJson: true)
+  String get op => 'update';
+
+  final String property;
+  final dynamic value;
+
+  RealmUpdateEvent({
+    required super.id,
+    required this.property,
+    required this.value,
+  });
+
+  factory RealmUpdateEvent.fromJson(Map<String, dynamic> json) =>
+      _$RealmUpdateEventFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$RealmUpdateEventToJson(this);
+
+  /// Converts this update event into an update_dict event
+  RealmUpdateDictEvent toUpdateDictEvent() {
+    return RealmUpdateDictEvent(
+      id: id,
+      property: 'default',
+      data: {property: value},
+    );
+  }
+}
+
+/// A [RealmEvent] with op `update_dict`: Represents an update to multiple properties in the realm configuration.
+/// See: https://zulip.com/api/get-events#realm-update_dict
+@JsonSerializable(fieldRename: FieldRename.snake)
+class RealmUpdateDictEvent extends RealmEvent {
+  @override
+  @JsonKey(includeToJson: true)
+  String get op => 'update';
+
+  final String property;
+  final Map<String, dynamic> data;
+
+  RealmUpdateDictEvent({
+    required super.id,
+    required this.property,
+    required this.data,
+  });
+
+  factory RealmUpdateDictEvent.fromJson(Map<String, dynamic> json) =>
+      _$RealmUpdateDictEventFromJson(json);
+
+  @override
+  Map<String, dynamic> toJson() => _$RealmUpdateDictEventToJson(this);
 }
 
 /// A Zulip event of type `realm_user`.

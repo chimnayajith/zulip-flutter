@@ -29,6 +29,8 @@ Object nullCheckError() {
 final Uri realmUrl = Uri.parse('https://chat.example/');
 Uri get _realmUrl => realmUrl;
 
+const String realmName = "Example Realm";
+const String realmIcon = "/user_avatars/2/realm/icon.png";
 const String recentZulipVersion = '9.0';
 const int recentZulipFeatureLevel = 278;
 const int futureZulipFeatureLevel = 9999;
@@ -160,6 +162,8 @@ Account account({
   return Account(
     id: id ?? 1000, // TODO generate example IDs
     realmUrl: realmUrl ?? _realmUrl,
+    realmName: realmName,
+    realmIcon: realmIcon,
     email: email,
     apiKey: apiKey ?? 'aeouasdf',
     userId: user.userId,

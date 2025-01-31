@@ -84,6 +84,40 @@ Map<String, dynamic> _$CustomProfileFieldsEventToJson(
       'fields': instance.fields,
     };
 
+RealmUpdateEvent _$RealmUpdateEventFromJson(Map<String, dynamic> json) =>
+    RealmUpdateEvent(
+      id: (json['id'] as num).toInt(),
+      property: json['property'] as String,
+      value: json['value'],
+    );
+
+Map<String, dynamic> _$RealmUpdateEventToJson(RealmUpdateEvent instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'type': instance.type,
+      'op': instance.op,
+      'property': instance.property,
+      'value': instance.value,
+    };
+
+RealmUpdateDictEvent _$RealmUpdateDictEventFromJson(
+        Map<String, dynamic> json) =>
+    RealmUpdateDictEvent(
+      id: (json['id'] as num).toInt(),
+      property: json['property'] as String,
+      data: json['data'] as Map<String, dynamic>,
+    );
+
+Map<String, dynamic> _$RealmUpdateDictEventToJson(
+        RealmUpdateDictEvent instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'type': instance.type,
+      'op': instance.op,
+      'property': instance.property,
+      'data': instance.data,
+    };
+
 RealmUserAddEvent _$RealmUserAddEventFromJson(Map<String, dynamic> json) =>
     RealmUserAddEvent(
       id: (json['id'] as num).toInt(),

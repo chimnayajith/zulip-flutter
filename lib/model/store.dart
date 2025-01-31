@@ -597,6 +597,11 @@ class PerAccountStore extends ChangeNotifier with EmojiStore, ChannelStore, Mess
         customProfileFields = _sortCustomProfileFields(event.fields);
         notifyListeners();
 
+      case RealmEvent():
+        assert(debugLog("server event: stream/${event.op}"));
+        await _handleRealmUpdate(event);
+        notifyListeners();
+
       case RealmUserAddEvent():
         assert(debugLog("server event: realm_user/add"));
         users[event.person.userId] = event.person;
@@ -700,6 +705,41 @@ class PerAccountStore extends ChangeNotifier with EmojiStore, ChannelStore, Mess
 
       case UnexpectedEvent():
         assert(debugLog("server event: ${jsonEncode(event.toJson())}")); // TODO log better
+    }
+  }
+
+  Future<void> _handleRealmUpdate(RealmEvent event) async {
+    final Map<String, dynamic> data = event is RealmUpdateEvent
+        ? event.toUpdateDictEvent().data
+        : (event as RealmUpdateDictEvent).data;
+
+    for (final entry in data.entries) {
+      final property = entry.key;
+      final value = entry.value;
+
+      switch (property) {
+        case 'name':
+          if (value is String) {
+            await _globalStore.updateAccount(
+              accountId,
+              AccountsCompanion(
+                realmName: Value(value),
+              ),
+            );
+          }
+        case 'icon_url':
+          if (value is String) {
+            await _globalStore.updateAccount(
+              accountId,
+              AccountsCompanion(
+                realmIcon: Value(value),
+              ),
+            );
+          }
+        // Add more cases to update the other fields.
+        default:
+          assert(debugLog("Unhandled realm property update: $property"));
+      }
     }
   }
 

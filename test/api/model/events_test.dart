@@ -29,6 +29,48 @@ void main() {
         '      on the pattern of the existing cases.'
     ).isEmpty();
   });
+  group('realm/update', () {
+    Map<String, Object?> mkJson(Map<String, Object?> data) => {
+      'id': 1,
+      'type': 'realm',
+      'op': 'update',
+      'property': 'name',
+      'value': 'New Realm Name',
+      ...data,
+    };
+
+    test('property and value present', () {
+      final event = Event.fromJson(mkJson({}));
+      check(event).isA<RealmUpdateEvent>();
+      final realmEvent = event as RealmUpdateEvent;
+      check(realmEvent.property).equals('name');
+      check(realmEvent.value).equals('New Realm Name');
+    });
+  });
+
+  group('realm/update_dict', () {
+    Map<String, Object?> mkJson(Map<String, Object?> data) => {
+      'id': 1,
+      'type': 'realm',
+      'op': 'update_dict',
+      'property': 'default',
+      'data': data,
+    };
+
+
+     test('property, value and data present', () {
+      final event = Event.fromJson(mkJson({'message_content_edit_limit_seconds': 600}));
+      check(event).isA<RealmUpdateDictEvent>();
+      final realmEvent = event as RealmUpdateDictEvent;
+
+      check(realmEvent.property).equals('default');
+
+      check(realmEvent.data).isNotEmpty();
+      check(realmEvent.data.containsKey('message_content_edit_limit_seconds')).isTrue();
+      check(realmEvent.data['message_content_edit_limit_seconds']).equals(600);
+    });
+
+  });
 
   group('realm_user/update', () {
     Map<String, Object?> mkJson(Map<String, Object?> data) =>

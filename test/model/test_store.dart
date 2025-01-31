@@ -109,6 +109,8 @@ class TestGlobalStore extends GlobalStore {
     return Account(
       id: accountId,
       realmUrl: data.realmUrl.value,
+      realmName: data.realmName.value,
+      realmIcon: data.realmIcon.value,
       userId: data.userId.value,
       email: data.email.value,
       apiKey: data.apiKey.value,

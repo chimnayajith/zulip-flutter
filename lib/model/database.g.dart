@@ -26,6 +26,18 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       GeneratedColumn<String>('realm_url', aliasedName, false,
               type: DriftSqlType.string, requiredDuringInsert: true)
           .withConverter<Uri>($AccountsTable.$converterrealmUrl);
+  static const VerificationMeta _realmNameMeta =
+      const VerificationMeta('realmName');
+  @override
+  late final GeneratedColumn<String> realmName = GeneratedColumn<String>(
+      'realm_name', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _realmIconMeta =
+      const VerificationMeta('realmIcon');
+  @override
+  late final GeneratedColumn<String> realmIcon = GeneratedColumn<String>(
+      'realm_icon', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
   late final GeneratedColumn<int> userId = GeneratedColumn<int>(
@@ -69,6 +81,8 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
   List<GeneratedColumn> get $columns => [
         id,
         realmUrl,
+        realmName,
+        realmIcon,
         userId,
         email,
         apiKey,
@@ -91,6 +105,14 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     context.handle(_realmUrlMeta, const VerificationResult.success());
+    if (data.containsKey('realm_name')) {
+      context.handle(_realmNameMeta,
+          realmName.isAcceptableOrUnknown(data['realm_name']!, _realmNameMeta));
+    }
+    if (data.containsKey('realm_icon')) {
+      context.handle(_realmIconMeta,
+          realmIcon.isAcceptableOrUnknown(data['realm_icon']!, _realmIconMeta));
+    }
     if (data.containsKey('user_id')) {
       context.handle(_userIdMeta,
           userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
@@ -156,6 +178,10 @@ class $AccountsTable extends Accounts with TableInfo<$AccountsTable, Account> {
       realmUrl: $AccountsTable.$converterrealmUrl.fromSql(attachedDatabase
           .typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}realm_url'])!),
+      realmName: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}realm_name']),
+      realmIcon: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}realm_icon']),
       userId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
       email: attachedDatabase.typeMapping
@@ -194,6 +220,8 @@ class Account extends DataClass implements Insertable<Account> {
   /// This corresponds to [GetServerSettingsResult.realmUrl].
   /// It never changes for a given account.
   final Uri realmUrl;
+  final String? realmName;
+  final String? realmIcon;
 
   /// The Zulip user ID of this account.
   ///
@@ -209,6 +237,8 @@ class Account extends DataClass implements Insertable<Account> {
   const Account(
       {required this.id,
       required this.realmUrl,
+      this.realmName,
+      this.realmIcon,
       required this.userId,
       required this.email,
       required this.apiKey,
@@ -223,6 +253,12 @@ class Account extends DataClass implements Insertable<Account> {
     {
       map['realm_url'] =
           Variable<String>($AccountsTable.$converterrealmUrl.toSql(realmUrl));
+    }
+    if (!nullToAbsent || realmName != null) {
+      map['realm_name'] = Variable<String>(realmName);
+    }
+    if (!nullToAbsent || realmIcon != null) {
+      map['realm_icon'] = Variable<String>(realmIcon);
     }
     map['user_id'] = Variable<int>(userId);
     map['email'] = Variable<String>(email);
@@ -242,6 +278,12 @@ class Account extends DataClass implements Insertable<Account> {
     return AccountsCompanion(
       id: Value(id),
       realmUrl: Value(realmUrl),
+      realmName: realmName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(realmName),
+      realmIcon: realmIcon == null && nullToAbsent
+          ? const Value.absent()
+          : Value(realmIcon),
       userId: Value(userId),
       email: Value(email),
       apiKey: Value(apiKey),
@@ -262,6 +304,8 @@ class Account extends DataClass implements Insertable<Account> {
     return Account(
       id: serializer.fromJson<int>(json['id']),
       realmUrl: serializer.fromJson<Uri>(json['realmUrl']),
+      realmName: serializer.fromJson<String?>(json['realmName']),
+      realmIcon: serializer.fromJson<String?>(json['realmIcon']),
       userId: serializer.fromJson<int>(json['userId']),
       email: serializer.fromJson<String>(json['email']),
       apiKey: serializer.fromJson<String>(json['apiKey']),
@@ -277,6 +321,8 @@ class Account extends DataClass implements Insertable<Account> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'realmUrl': serializer.toJson<Uri>(realmUrl),
+      'realmName': serializer.toJson<String?>(realmName),
+      'realmIcon': serializer.toJson<String?>(realmIcon),
       'userId': serializer.toJson<int>(userId),
       'email': serializer.toJson<String>(email),
       'apiKey': serializer.toJson<String>(apiKey),
@@ -290,6 +336,8 @@ class Account extends DataClass implements Insertable<Account> {
   Account copyWith(
           {int? id,
           Uri? realmUrl,
+          Value<String?> realmName = const Value.absent(),
+          Value<String?> realmIcon = const Value.absent(),
           int? userId,
           String? email,
           String? apiKey,
@@ -300,6 +348,8 @@ class Account extends DataClass implements Insertable<Account> {
       Account(
         id: id ?? this.id,
         realmUrl: realmUrl ?? this.realmUrl,
+        realmName: realmName.present ? realmName.value : this.realmName,
+        realmIcon: realmIcon.present ? realmIcon.value : this.realmIcon,
         userId: userId ?? this.userId,
         email: email ?? this.email,
         apiKey: apiKey ?? this.apiKey,
@@ -314,6 +364,8 @@ class Account extends DataClass implements Insertable<Account> {
     return Account(
       id: data.id.present ? data.id.value : this.id,
       realmUrl: data.realmUrl.present ? data.realmUrl.value : this.realmUrl,
+      realmName: data.realmName.present ? data.realmName.value : this.realmName,
+      realmIcon: data.realmIcon.present ? data.realmIcon.value : this.realmIcon,
       userId: data.userId.present ? data.userId.value : this.userId,
       email: data.email.present ? data.email.value : this.email,
       apiKey: data.apiKey.present ? data.apiKey.value : this.apiKey,
@@ -337,6 +389,8 @@ class Account extends DataClass implements Insertable<Account> {
     return (StringBuffer('Account(')
           ..write('id: $id, ')
           ..write('realmUrl: $realmUrl, ')
+          ..write('realmName: $realmName, ')
+          ..write('realmIcon: $realmIcon, ')
           ..write('userId: $userId, ')
           ..write('email: $email, ')
           ..write('apiKey: $apiKey, ')
@@ -349,14 +403,26 @@ class Account extends DataClass implements Insertable<Account> {
   }
 
   @override
-  int get hashCode => Object.hash(id, realmUrl, userId, email, apiKey,
-      zulipVersion, zulipMergeBase, zulipFeatureLevel, ackedPushToken);
+  int get hashCode => Object.hash(
+      id,
+      realmUrl,
+      realmName,
+      realmIcon,
+      userId,
+      email,
+      apiKey,
+      zulipVersion,
+      zulipMergeBase,
+      zulipFeatureLevel,
+      ackedPushToken);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Account &&
           other.id == this.id &&
           other.realmUrl == this.realmUrl &&
+          other.realmName == this.realmName &&
+          other.realmIcon == this.realmIcon &&
           other.userId == this.userId &&
           other.email == this.email &&
           other.apiKey == this.apiKey &&
@@ -369,6 +435,8 @@ class Account extends DataClass implements Insertable<Account> {
 class AccountsCompanion extends UpdateCompanion<Account> {
   final Value<int> id;
   final Value<Uri> realmUrl;
+  final Value<String?> realmName;
+  final Value<String?> realmIcon;
   final Value<int> userId;
   final Value<String> email;
   final Value<String> apiKey;
@@ -379,6 +447,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   const AccountsCompanion({
     this.id = const Value.absent(),
     this.realmUrl = const Value.absent(),
+    this.realmName = const Value.absent(),
+    this.realmIcon = const Value.absent(),
     this.userId = const Value.absent(),
     this.email = const Value.absent(),
     this.apiKey = const Value.absent(),
@@ -390,6 +460,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   AccountsCompanion.insert({
     this.id = const Value.absent(),
     required Uri realmUrl,
+    this.realmName = const Value.absent(),
+    this.realmIcon = const Value.absent(),
     required int userId,
     required String email,
     required String apiKey,
@@ -406,6 +478,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   static Insertable<Account> custom({
     Expression<int>? id,
     Expression<String>? realmUrl,
+    Expression<String>? realmName,
+    Expression<String>? realmIcon,
     Expression<int>? userId,
     Expression<String>? email,
     Expression<String>? apiKey,
@@ -417,6 +491,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (realmUrl != null) 'realm_url': realmUrl,
+      if (realmName != null) 'realm_name': realmName,
+      if (realmIcon != null) 'realm_icon': realmIcon,
       if (userId != null) 'user_id': userId,
       if (email != null) 'email': email,
       if (apiKey != null) 'api_key': apiKey,
@@ -430,6 +506,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
   AccountsCompanion copyWith(
       {Value<int>? id,
       Value<Uri>? realmUrl,
+      Value<String?>? realmName,
+      Value<String?>? realmIcon,
       Value<int>? userId,
       Value<String>? email,
       Value<String>? apiKey,
@@ -440,6 +518,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     return AccountsCompanion(
       id: id ?? this.id,
       realmUrl: realmUrl ?? this.realmUrl,
+      realmName: realmName ?? this.realmName,
+      realmIcon: realmIcon ?? this.realmIcon,
       userId: userId ?? this.userId,
       email: email ?? this.email,
       apiKey: apiKey ?? this.apiKey,
@@ -459,6 +539,12 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     if (realmUrl.present) {
       map['realm_url'] = Variable<String>(
           $AccountsTable.$converterrealmUrl.toSql(realmUrl.value));
+    }
+    if (realmName.present) {
+      map['realm_name'] = Variable<String>(realmName.value);
+    }
+    if (realmIcon.present) {
+      map['realm_icon'] = Variable<String>(realmIcon.value);
     }
     if (userId.present) {
       map['user_id'] = Variable<int>(userId.value);
@@ -489,6 +575,8 @@ class AccountsCompanion extends UpdateCompanion<Account> {
     return (StringBuffer('AccountsCompanion(')
           ..write('id: $id, ')
           ..write('realmUrl: $realmUrl, ')
+          ..write('realmName: $realmName, ')
+          ..write('realmIcon: $realmIcon, ')
           ..write('userId: $userId, ')
           ..write('email: $email, ')
           ..write('apiKey: $apiKey, ')
@@ -515,6 +603,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
 typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
   Value<int> id,
   required Uri realmUrl,
+  Value<String?> realmName,
+  Value<String?> realmIcon,
   required int userId,
   required String email,
   required String apiKey,
@@ -526,6 +616,8 @@ typedef $$AccountsTableCreateCompanionBuilder = AccountsCompanion Function({
 typedef $$AccountsTableUpdateCompanionBuilder = AccountsCompanion Function({
   Value<int> id,
   Value<Uri> realmUrl,
+  Value<String?> realmName,
+  Value<String?> realmIcon,
   Value<int> userId,
   Value<String> email,
   Value<String> apiKey,
@@ -551,6 +643,12 @@ class $$AccountsTableFilterComposer
       $composableBuilder(
           column: $table.realmUrl,
           builder: (column) => ColumnWithTypeConverterFilters(column));
+
+  ColumnFilters<String> get realmName => $composableBuilder(
+      column: $table.realmName, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get realmIcon => $composableBuilder(
+      column: $table.realmIcon, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get userId => $composableBuilder(
       column: $table.userId, builder: (column) => ColumnFilters(column));
@@ -592,6 +690,12 @@ class $$AccountsTableOrderingComposer
   ColumnOrderings<String> get realmUrl => $composableBuilder(
       column: $table.realmUrl, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get realmName => $composableBuilder(
+      column: $table.realmName, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get realmIcon => $composableBuilder(
+      column: $table.realmIcon, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get userId => $composableBuilder(
       column: $table.userId, builder: (column) => ColumnOrderings(column));
 
@@ -632,6 +736,12 @@ class $$AccountsTableAnnotationComposer
 
   GeneratedColumnWithTypeConverter<Uri, String> get realmUrl =>
       $composableBuilder(column: $table.realmUrl, builder: (column) => column);
+
+  GeneratedColumn<String> get realmName =>
+      $composableBuilder(column: $table.realmName, builder: (column) => column);
+
+  GeneratedColumn<String> get realmIcon =>
+      $composableBuilder(column: $table.realmIcon, builder: (column) => column);
 
   GeneratedColumn<int> get userId =>
       $composableBuilder(column: $table.userId, builder: (column) => column);
@@ -680,6 +790,8 @@ class $$AccountsTableTableManager extends RootTableManager<
           updateCompanionCallback: ({
             Value<int> id = const Value.absent(),
             Value<Uri> realmUrl = const Value.absent(),
+            Value<String?> realmName = const Value.absent(),
+            Value<String?> realmIcon = const Value.absent(),
             Value<int> userId = const Value.absent(),
             Value<String> email = const Value.absent(),
             Value<String> apiKey = const Value.absent(),
@@ -691,6 +803,8 @@ class $$AccountsTableTableManager extends RootTableManager<
               AccountsCompanion(
             id: id,
             realmUrl: realmUrl,
+            realmName: realmName,
+            realmIcon: realmIcon,
             userId: userId,
             email: email,
             apiKey: apiKey,
@@ -702,6 +816,8 @@ class $$AccountsTableTableManager extends RootTableManager<
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
             required Uri realmUrl,
+            Value<String?> realmName = const Value.absent(),
+            Value<String?> realmIcon = const Value.absent(),
             required int userId,
             required String email,
             required String apiKey,
@@ -713,6 +829,8 @@ class $$AccountsTableTableManager extends RootTableManager<
               AccountsCompanion.insert(
             id: id,
             realmUrl: realmUrl,
+            realmName: realmName,
+            realmIcon: realmIcon,
             userId: userId,
             email: email,
             apiKey: apiKey,

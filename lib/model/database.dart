@@ -23,6 +23,8 @@ class Accounts extends Table {
   /// This corresponds to [GetServerSettingsResult.realmUrl].
   /// It never changes for a given account.
   Column<String> get realmUrl => text().map(const UriConverter())();
+  Column<String> get realmName => text().nullable()();
+  Column<String> get realmIcon => text().nullable()();
 
   /// The Zulip user ID of this account.
   ///
@@ -74,7 +76,7 @@ class AppDatabase extends _$AppDatabase {
   //  * Write a migration in `onUpgrade` below.
   //  * Write tests.
   @override
-  int get schemaVersion => 2; // See note.
+  int get schemaVersion => 3; // See note.
 
   @override
   MigrationStrategy get migration {
@@ -99,6 +101,10 @@ class AppDatabase extends _$AppDatabase {
 
         if (from < 2 && 2 <= to) {
           await m.addColumn(accounts, accounts.ackedPushToken);
+        }
+        if (from < 3 && 3 <= to) {
+          await m.addColumn(accounts, accounts.realmName);
+          await m.addColumn(accounts, accounts.realmIcon);
         }
         // New migrations go here.
       }
