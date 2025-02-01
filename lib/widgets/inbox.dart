@@ -480,14 +480,17 @@ class _StreamSection extends StatelessWidget {
       pageState: pageState,
       sectionContext: context,
     );
-    return StickyHeaderItem(
+    return InkWell(
+      onLongPress: () => showChannelActionSheet(context, streamId: data.streamId),
+      child: StickyHeaderItem(
       header: header,
       child: Column(children: [
         header,
         if (!collapsed) ...data.items.map((item) {
           return _TopicItem(streamId: data.streamId, data: item);
         }),
-      ]));
+      ])),
+    );
   }
 }
 

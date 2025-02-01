@@ -452,6 +452,50 @@ void main() {
     });
   });
 
+  group('channel action sheet', () {
+    final someChannel = eg.stream();
+
+    Future<void> prepare({
+      ZulipStream? channel,
+      UnreadMessagesSnapshot? unreadMsgs,
+      int? zulipFeatureLevel,
+    }) async {
+      final effectiveChannel = channel ?? someChannel;
+      addTearDown(testBinding.reset);
+
+      final account = eg.selfAccount.copyWith(zulipFeatureLevel: zulipFeatureLevel);
+      await testBinding.globalStore.add(account, eg.initialSnapshot(
+        realmUsers: [eg.selfUser, eg.otherUser],
+        streams: [effectiveChannel],
+        unreadMsgs: unreadMsgs,
+        zulipFeatureLevel: zulipFeatureLevel));
+      store = await testBinding.globalStore.perAccount(eg.selfAccount.id);
+      connection = store.connection as FakeApiConnection;
+    }
+
+    Future<void> showFromInbox(WidgetTester tester) async {
+      final channelIdsWithUnreads = store.unreads.streams.keys;
+      final hasTopicWithUnreads = channelIdsWithUnreads.any((streamId) =>
+        store.unreads.countInChannelNarrow(streamId) > 0);
+      if (!hasTopicWithUnreads) {
+        throw FlutterError.fromParts([
+          ErrorSummary('showFromInbox called without an unread message'),
+          ErrorHint(
+            'Before calling showFromInbox, ensure that [Unreads] '
+            'has an unread message in the relevant topic. ',
+          ),
+        ]);
+      }
+    await tester.pumpWidget(TestZulipApp(accountId: eg.selfAccount.id,
+        child: const HomePage()));
+      await tester.pump();
+      check(find.byType(InboxPageBody)).findsOne();
+      await tester.longPress(find.text(someChannel.name));
+      // sheet appears onscreen; default duration of bottom-sheet enter animation
+      await tester.pump(const Duration(milliseconds: 250));
+    }
+  });
+
   group('message action sheet', () {
     group('ReactionButtons', () {
       final popularCandidates = EmojiStore.popularEmojiCandidates;

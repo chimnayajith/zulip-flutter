@@ -65,6 +65,9 @@ class ZulipLocalizationsEn extends ZulipLocalizations {
   String get permissionsDeniedReadExternalStorage => 'To upload files, please grant Zulip additional permissions in Settings.';
 
   @override
+  String get actionSheetOptionMarkChannelAsRead => 'Mark channel as read';
+
+  @override
   String get actionSheetOptionMuteTopic => 'Mute topic';
 
   @override

@@ -162,6 +162,65 @@ class ActionSheetCancelButton extends StatelessWidget {
   }
 }
 
+void showChannelActionSheet(BuildContext context, {
+  required int streamId,
+}) {
+  final store = PerAccountStoreWidget.of(context);
+
+  final optionButtons = <ActionSheetMenuItemButton>[];
+  final unreadCount = store.unreads.countInChannelNarrow(streamId);
+  if(unreadCount > 0){
+    optionButtons.add(
+      MarkChannelAsReadButton(
+        streamId: streamId,
+        pageContext: context,
+        )
+    );
+  }
+   if (optionButtons.isEmpty) {
+    // TODO(a11y): This case makes a no-op gesture handler; as a consequence,
+    //   we're presenting some UI (to people who use screen-reader software) as
+    //   though it offers a gesture interaction that it doesn't meaningfully
+    //   offer, which is confusing. The solution here is probably to remove this
+    //   is-empty case by having at least one button that's always present,
+    //   such as "copy link to topic".
+    return;
+  }
+  _showActionSheet(context, optionButtons: optionButtons);
+}
+
+class MarkChannelAsReadButton extends ActionSheetMenuItemButton {
+  const MarkChannelAsReadButton({
+    super.key,
+    required this.streamId,
+    required super.pageContext
+  });
+  final int streamId;
+
+  @override
+  IconData get icon => Icons.mark_chat_read; // Choose a relevant icon
+
+  @override
+  String label(ZulipLocalizations zulipLocalizations) {
+    return zulipLocalizations.actionSheetOptionMarkChannelAsRead;
+  }
+
+  @override
+  void onPressed() async {
+    try {
+      final narrow = ChannelNarrow(streamId);
+      await markNarrowAsRead(pageContext, narrow);
+    } catch (e) {
+      if (!pageContext.mounted) return;
+
+      showErrorDialog(
+        context: pageContext,
+        title: "Failed to mark channel as read",
+        message: e.toString(),
+      );
+    }
+  }
+}
 /// Show a sheet of actions you can take on a topic.
 void showTopicActionSheet(BuildContext context, {
   required int channelId,
