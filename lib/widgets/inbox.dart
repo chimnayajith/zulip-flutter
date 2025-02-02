@@ -255,6 +255,7 @@ abstract class _HeaderItem extends StatelessWidget {
   }
 
   Future<void> onRowTap();
+  Future<void> onLongPress();
 
   @override
   Widget build(BuildContext context) {
@@ -272,6 +273,7 @@ abstract class _HeaderItem extends StatelessWidget {
         //   But that's in tension with the Figma, which gives these header rows
         //   40px min height.
         onTap: onCollapseButtonTap,
+        onLongPress: onLongPress,
         child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           Padding(padding: const EdgeInsets.all(10),
             child: Icon(size: 20, color: designVariables.sectionCollapseIcon,
@@ -330,6 +332,12 @@ class _AllDmsHeaderItem extends _HeaderItem {
     pageState.allDmsCollapsed = !collapsed;
   }
   @override Future<void> onRowTap() => onCollapseButtonTap(); // TODO open all-DMs narrow?
+
+  @override
+  Future<void> onLongPress() async {
+    // TODO(#1272) action sheet for DM conversation
+    return;
+  }
 }
 
 class _AllDmsSection extends StatelessWidget {
@@ -464,6 +472,11 @@ class _StreamHeaderItem extends _HeaderItem {
     }
   }
   @override Future<void> onRowTap() => onCollapseButtonTap(); // TODO open channel narrow
+
+  @override
+  Future<void> onLongPress() async {
+    showChannelActionSheet(sectionContext, streamId: subscription.streamId);
+  }
 }
 
 class _StreamSection extends StatelessWidget {
