@@ -20,6 +20,57 @@ import '../notifications/receive.dart';
 import 'dialog.dart';
 import 'store.dart';
 
+/// High-level operations that combine API calls with UI feedback.
+///
+/// Methods in this class provide UI feedback while performing API operations.
+abstract final class ZulipAction {
+  static Future<void> markNarrowAsRead(BuildContext context, Narrow narrow) async {
+    final store = PerAccountStoreWidget.of(context);
+    final connection = store.connection;
+    final zulipLocalizations = ZulipLocalizations.of(context);
+    final useLegacy = connection.zulipFeatureLevel! < 155; // TODO(server-6)
+    if (useLegacy) {
+      try {
+        await _legacyMarkNarrowAsRead(context, narrow);
+        return;
+      } catch (e) {
+        if (!context.mounted) return;
+        showErrorDialog(context: context,
+          title: zulipLocalizations.errorMarkAsReadFailedTitle,
+          message: e.toString()); // TODO(#741): extract user-facing message better
+        return;
+      }
+    }
+
+    final didPass = await updateMessageFlagsStartingFromAnchor(
+      context: context,
+      // Include `is:unread` in the narrow.  That has a database index, so
+      // this can be an important optimization in narrows with a lot of history.
+      // The server applies the same optimization within the (deprecated)
+      // specialized endpoints for marking messages as read; see
+      // `do_mark_stream_messages_as_read` in `zulip:zerver/actions/message_flags.py`.
+      apiNarrow: narrow.apiEncode()..add(ApiNarrowIs(IsOperand.unread)),
+      // Use [AnchorCode.oldest], because [AnchorCode.firstUnread]
+      // will be the oldest non-muted unread message, which would
+      // result in muted unreads older than the first unread not
+      // being processed.
+      anchor: AnchorCode.oldest,
+      // [AnchorCode.oldest] is an anchor ID lower than any valid
+      // message ID.
+      includeAnchor: false,
+      op: UpdateMessageFlagsOp.add,
+      flag: MessageFlag.read,
+      onCompletedMessage: zulipLocalizations.markAsReadComplete,
+      progressMessage: zulipLocalizations.markAsReadInProgress,
+      onFailedTitle: zulipLocalizations.errorMarkAsReadFailedTitle);
+
+    if (!didPass || !context.mounted) return;
+    if (narrow is CombinedFeedNarrow) {
+      PerAccountStoreWidget.of(context).unreads.handleAllMessagesReadSuccess();
+    }
+  }
+}
+
 Future<void> logOutAccount(BuildContext context, int accountId) async {
   final globalStore = GlobalStoreWidget.of(context);
 
@@ -32,7 +83,7 @@ Future<void> logOutAccount(BuildContext context, int accountId) async {
   await globalStore.removeAccount(accountId);
 }
 
-Future<void> unregisterToken(GlobalStore globalStore, int accountId) async {
+ Future<void> unregisterToken(GlobalStore globalStore, int accountId) async {
   final account = globalStore.getAccount(accountId);
   if (account == null) return; // TODO(log)
 
@@ -50,52 +101,6 @@ Future<void> unregisterToken(GlobalStore globalStore, int accountId) async {
     // TODO retry? handle failures?
   } finally {
     connection.close();
-  }
-}
-
-Future<void> markNarrowAsRead(BuildContext context, Narrow narrow) async {
-  final store = PerAccountStoreWidget.of(context);
-  final connection = store.connection;
-  final zulipLocalizations = ZulipLocalizations.of(context);
-  final useLegacy = connection.zulipFeatureLevel! < 155; // TODO(server-6)
-  if (useLegacy) {
-    try {
-      await _legacyMarkNarrowAsRead(context, narrow);
-      return;
-    } catch (e) {
-      if (!context.mounted) return;
-      showErrorDialog(context: context,
-        title: zulipLocalizations.errorMarkAsReadFailedTitle,
-        message: e.toString()); // TODO(#741): extract user-facing message better
-      return;
-    }
-  }
-
-  final didPass = await updateMessageFlagsStartingFromAnchor(
-    context: context,
-    // Include `is:unread` in the narrow.  That has a database index, so
-    // this can be an important optimization in narrows with a lot of history.
-    // The server applies the same optimization within the (deprecated)
-    // specialized endpoints for marking messages as read; see
-    // `do_mark_stream_messages_as_read` in `zulip:zerver/actions/message_flags.py`.
-    apiNarrow: narrow.apiEncode()..add(ApiNarrowIs(IsOperand.unread)),
-    // Use [AnchorCode.oldest], because [AnchorCode.firstUnread]
-    // will be the oldest non-muted unread message, which would
-    // result in muted unreads older than the first unread not
-    // being processed.
-    anchor: AnchorCode.oldest,
-    // [AnchorCode.oldest] is an anchor ID lower than any valid
-    // message ID.
-    includeAnchor: false,
-    op: UpdateMessageFlagsOp.add,
-    flag: MessageFlag.read,
-    onCompletedMessage: zulipLocalizations.markAsReadComplete,
-    progressMessage: zulipLocalizations.markAsReadInProgress,
-    onFailedTitle: zulipLocalizations.errorMarkAsReadFailedTitle);
-
-  if (!didPass || !context.mounted) return;
-  if (narrow is CombinedFeedNarrow) {
-    PerAccountStoreWidget.of(context).unreads.handleAllMessagesReadSuccess();
   }
 }
 
